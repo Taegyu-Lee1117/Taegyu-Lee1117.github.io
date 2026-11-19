@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>로스킨라빈스 | 이태규 포트폴리오</title><meta name="description" content="변화하는 재료 표면을 힘으로 감지하고, 스쿠핑 동작을 제조 공정으로 연결했습니다."><meta name="theme-color" content="#ffffff"><meta property="og:title" content="로스킨라빈스 | 이태규 포트폴리오"><meta property="og:description" content="변화하는 재료 표면을 힘으로 감지하고, 스쿠핑 동작을 제조 공정으로 연결했습니다."><meta property="og:type" content="website"><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/style.css"></head><body><a class="skip-link" href="#main">본문으로 건너뛰기</a>
+<header class="site-header"><div class="header-inner"><a class="brand" href="../index.html" aria-label="이태규 포트폴리오 홈"><span class="brand-mark" aria-hidden="true">TL</span><span>이태규<span class="brand-sub">Robotics Portfolio</span></span></a><nav aria-label="주요 메뉴"><a href="../index.html#projects">프로젝트</a><a href="../index.html#about">소개</a><a href="https://github.com/Taegyu-Lee1117" target="_blank" rel="noopener noreferrer">GitHub</a></nav></div></header><main id="main" class="project-main shell"><a class="back-link" href="../index.html#projects">전체 프로젝트</a><header class="project-hero pink"><div><p class="eyebrow">협동1 <span>·</span> 제조 자동화</p><h1>로스킨라빈스</h1><p class="english-title">Roskin Robbins</p><p class="detail-summary">변화하는 재료 표면을 힘으로 감지하고, 스쿠핑 동작을 제조 공정으로 연결했습니다.</p><ul class="tags" aria-label="사용 기술"><li>ROS 2</li><li>Python</li><li>Force Sensing</li></ul><a class="button button-outline" href="https://github.com/Taegyu-Lee1117/Roskin_Robbins/tree/feature/force-guided-scoop-sequence" target="_blank" rel="noopener noreferrer">GitHub 코드 보기</a></div><figure class="detail-visual"><img src="../assets/roskin-robbins.svg" alt="힘 감지와 스쿱 모션을 표현한 개념도" width="760" height="460"><figcaption>프로젝트 동작을 설명하는 개념도</figcaption></figure></header><div class="article-layout"><aside class="article-nav"><p>이 프로젝트에서</p><nav aria-label="프로젝트 목차"><a href="#section-1">프로젝트 개요</a><a href="#section-2">해결하려던 문제</a><a href="#section-3">담당한 핵심 구현</a><a href="#section-4">문제 해결 과정</a><a href="#section-5">전체 시스템과의 연결</a><a href="#section-6">구현 결과</a></nav><div class="aside-role"><span>담당 역할</span><p>스쿠핑 시퀀스 · 힘 감지 로직</p></div></aside><div class="article-content"><section class="article-section" id="section-1"><h2>프로젝트 개요</h2>
+<p>ROS 2와 두산 M0609 협동로봇을 활용한 아이스크림 제조 자동화 프로젝트입니다. 키오스크 주문을 받아 컵 배치, 스쿠핑, 컵 투입, 스쿱 반환, 완성품 제공까지 순차적으로 수행하는 시스템을 구성했습니다.</p>
+<p>저는 <strong>스쿠핑 공정과 힘 감지 로직</strong>을 담당했습니다. 재료 표면을 탐색하고, 접촉 후 추가 진입과 CURL 동작으로 재료를 퍼낸 뒤 기존 컵 이동 경로로 연결하는 제어 시퀀스를 구현했습니다.</p>
+<p>&lt;table header-row=&quot;true&quot;&gt; &lt;colgroup&gt; &lt;col /&gt; &lt;col width=&quot;475&quot; /&gt; &lt;/colgroup&gt; &lt;tr&gt; &lt;td&gt; 항목 &lt;/td&gt; &lt;td&gt; 내용 &lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt; 로봇·장비 &lt;/td&gt; &lt;td&gt; Doosan M0609, 컵·스쿱 그리퍼, 디지털 입출력 &lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt; 개발 환경 &lt;/td&gt; &lt;td&gt; Ubuntu 24.04, ROS 2 Jazzy, Python &lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt; 담당 기술 &lt;/td&gt; &lt;td&gt; Doosan Robotics API, TCP 위치 조회, 힘 측정, 단계별 모션 제어 &lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt; 팀 시스템 &lt;/td&gt; &lt;td&gt; 키오스크, FastAPI, PostgreSQL, ROS 2 Action 기반 제조 제어 &lt;/td&gt; &lt;/tr&gt; &lt;/table&gt;</p>
+</section>
+<section class="article-section" id="section-2"><h2>해결하려던 문제</h2>
+<p>재료는 퍼낼 때마다 표면 높이와 형태가 달라집니다. 동일한 목표 좌표까지 하강하는 방식은 실제 표면과의 접촉 여부를 반영하기 어렵고, 진입이 부족하거나 과도해질 수 있습니다.</p>
+<p>또한 스쿱의 자세에 따라 무접촉 상태에서도 힘 측정값에 편향이 생길 수 있습니다. 이를 반영해, <strong>진입 직전 측정값을 기준으로 힘의 변화량을 계산하고 접촉을 판단하는 방식</strong>을 적용했습니다.</p>
+</section>
+<section class="article-section" id="section-3"><h2>담당한 핵심 구현</h2>
+<div class="table-scroll" role="region" aria-label="내용 비교 표" tabindex="0"><table><thead><tr><th scope="col">구간</th><th scope="col">구현 내용</th><th scope="col">설계 목적</th></tr></thead><tbody><tr><td>기준값 측정</td><td>진입 자세에서 Fx/Fz를 5회 측정한 평균을 baseline으로 설정</td><td>현재 자세에서 측정되는 힘을 비교 기준으로 사용</td></tr><tr><td>표면 탐색</td><td>Z축을 1mm씩 하강하고, 힘 변화량 1.3N 이상을 연속 2회 확인</td><td>순간적인 측정값만으로 접촉을 확정하지 않도록 구성</td></tr><tr><td>추가 진입</td><td>접촉 위치에서 2mm 단위로 최대 7mm 진입하며 단계별 힘 확인</td><td>한 번에 깊게 진입하는 동작을 분할</td></tr><tr><td>수직화·CURL</td><td>현재 TCP 위치에서 자세를 수직화한 뒤 회전과 X축 후퇴를 결합</td><td>접촉 이후 재료를 퍼담는 동작 구성</td></tr><tr><td>제한된 벽 접근</td><td>벽 방향으로 2mm씩 최대 6mm 이동하며 반력 증가 확인</td><td>충돌을 완료 조건으로 삼지 않고 이동 거리와 힘으로 접근 제한</td></tr><tr><td>후퇴·공정 연결</td><td>후퇴와 수직 상승 후 현재 TCP에서 컵 이동 경로로 연결</td><td>접촉 위치에 따라 달라지는 스쿠핑 종료점 반영</td></tr></tbody></table></div>
+<p>접촉 판단에는 다음 값을 사용했습니다.</p>
+<pre><code>ΔF = √((Fx − baselineFx)² + (Fz − baselineFz)²)</code></pre>
+<p>이 변화량은 <strong>접촉 탐색과 추가 진입 구간</strong>에 적용했습니다. 자세가 크게 바뀌는 CURL 이후에는 기존 진입 baseline을 그대로 적용하지 않고, 축별 절대 힘과 벽 접근 구간의 별도 기준값을 사용했습니다.</p>
+<div class="table-scroll" role="region" aria-label="내용 비교 표" tabindex="0"><table><thead><tr><th scope="col">검사</th><th scope="col">기준</th><th scope="col">적용 범위·처리</th></tr></thead><tbody><tr><td>표면 접촉 판정</td><td>X/Z 합성 변화량 1.3N 이상, 연속 2회</td><td>접촉 탐색 구간에서 접촉 확정</td></tr><tr><td>진입 델타 하드리밋</td><td>X/Z 합성 변화량 15N 이상</td><td>접촉 탐색·추가 진입 구간에서 후속 공정 중단</td></tr><tr><td>축별 절대 힘 제한</td><td>Fx/Fy/Fz 중 어느 축이든 절댓값 40N 이상</td><td>스쿠핑 중 각 힘 측정 지점에서 검사하고 후속 공정 중단</td></tr><tr><td>벽 방향 반력 증가</td><td>벽 접근 시작 시 Fx − 현재 Fx가 5N 이상</td><td>+X 접근을 마치고 후퇴 단계로 전환</td></tr></tbody></table></div>
+<p>힘은 <strong>각 이동이 끝난 뒤 측정</strong>하고, 제한값에 도달하면 후속 동작을 중단하도록 구성했습니다.</p>
+</section>
+<section class="article-section" id="section-4"><h2>문제 해결 과정</h2>
+<p>&lt;table header-row=&quot;true&quot;&gt; &lt;colgroup&gt; &lt;col width=&quot;355&quot; /&gt; &lt;col width=&quot;604&quot; /&gt; &lt;/colgroup&gt; &lt;tr&gt; &lt;td&gt; 문제 &lt;/td&gt; &lt;td&gt; 적용한 해결 방식 &lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt; 자세에 따른 힘 편향으로 접촉 판단이 어려움 &lt;/td&gt; &lt;td&gt; 진입 직전 Fx/Fz baseline을 측정하고 X/Z 합성 변화량으로 판단 &lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt; 순간적인 힘 변화가 접촉으로 판정될 가능성 &lt;/td&gt; &lt;td&gt; 임계값 연속 2회 충족 조건 적용, 미충족 시 카운터 초기화 &lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt; 접촉 후 과도하게 진입할 가능성 &lt;/td&gt; &lt;td&gt; 최대 7mm·단계당 2mm의 이동 제한과 Z 하한 적용 &lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt; 서로 다른 힘 제한의 의미가 섞일 가능성 &lt;/td&gt; &lt;td&gt; 진입 변화량 15N과 축별 절대 힘 40N의 검사 목적·적용 범위 구분 &lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt; 스쿠핑 종료 위치가 매번 달라짐 &lt;/td&gt; &lt;td&gt; 현재 TCP 위치를 읽어 후퇴·상승과 컵 이동 경로의 시작점으로 활용 &lt;/td&gt; &lt;/tr&gt; &lt;/table&gt;</p>
+<p>진입 델타 또는 축별 절대 힘 제한에 도달하면 해당 단계에서 예외를 발생시켜 후속 공정을 중단하도록 구성했습니다. 벽 방향 반력 한계는 추가 접근을 끝내고 후퇴하는 조건으로 구분했습니다.</p>
+</section>
+<section class="article-section" id="section-5"><h2>전체 시스템과의 연결</h2>
+<p>팀 시스템은 다음 흐름으로 구성되어 있습니다.</p>
+<pre><code>키오스크 주문
+→ FastAPI·PostgreSQL
+→ 주문 브리지
+→ /make_icecream Action
+→ 제조 공정 실행
+→ 진행 상태·결과 반영</code></pre>
+<p>제 담당 범위는 이 중 제조 공정의 스쿠핑 구간입니다. 기존 UI·DB·Action 인터페이스를 유지하면서 스쿠핑 내부를 다음과 같이 구성하고, 기존 컵 투입·반환 동작으로 연결했습니다.</p>
+<pre><code>스쿱 파지·재료 위 접근
+→ 기준값 측정·접촉 탐색
+→ 제한된 추가 진입
+→ 수직화·CURL
+→ 제한된 벽 접근
+→ 후퇴·상승
+→ 현재 TCP에서 컵 투입 경로 연결
+→ 배출·스쿱 반환</code></pre>
+</section>
+<section class="article-section" id="section-6"><h2>구현 결과</h2>
+<ul><li>표면 접촉을 힘으로 확인하고, 그 위치를 기준으로 후속 동작을 구성했습니다.</li><li>접촉 판정, 진입 제한, 절대 힘 제한을 목적에 따라 구분했습니다.</li><li>현재 TCP를 활용해 동적으로 달라지는 스쿠핑 종료 위치를 기존 제조 공정과 연결했습니다.</li><li>스쿠핑 로직과 파라미터, 공통 로봇 API 처리를 분리해 수정 지점을 명확히 했습니다.</li></ul>
+</section></div></div><nav class="next-project" aria-label="다른 프로젝트"><div><span>다음 프로젝트</span><a href="rocycle.html">ROCycle</a></div><a class="text-link" href="../index.html#projects">전체 목록</a></nav></main><footer class="site-footer"><div class="footer-inner"><p>이태규 <span>로봇 소프트웨어 포트폴리오</span></p><a href="../index.html#projects">프로젝트 둘러보기</a><p class="copyright">© 2026 Taegyu Lee</p></div></footer></body></html>
